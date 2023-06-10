@@ -1,14 +1,19 @@
 import json
 import os.path
 import pathlib
+import sys
 import time
 from bisect import bisect
+from pathlib import Path
 from shutil import move
 
 from requests import Timeout
 from tenacity import stop_after_attempt, wait_exponential, retry_if_exception_type
 
+sys.path.append(str(Path(os.path.realpath(__file__)).resolve().parents[1]))
 from utils import twitter, Parser, setup_logger
+
+
 
 STOP = stop_after_attempt(5)
 WAIT = wait_exponential(multiplier=1, min=30, max=900)
@@ -63,8 +68,8 @@ def save_following(user, following, outdir):
 def parse_arguments():
     parser = Parser(usage="%(prog)s {USERS, FILE}... [OPTION]...")
     parser.add_argument('input', nargs='+', help='Users or input file')
-    parser.add_argument('-o', nargs='?', type=pathlib.Path, metavar='FOLDER', help='Output folder')
-    parser.add_argument('-auth', nargs='?', type=pathlib.Path, metavar='auth.json', help='Auth config file')
+    parser.add_argument('-o', nargs='?', type=Path, metavar='FOLDER', help='Output folder')
+    parser.add_argument('-auth', nargs='?', type=Path, metavar='auth.json', help='Auth config file')
     args = parser.parse_args()
 
     users = []

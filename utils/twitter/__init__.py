@@ -38,7 +38,7 @@ class API:
         return statuses
 
     def get_friends(self, screen_name):
-        friend_ids_list = self.__get_friend_ids(screen_name)
+        friend_ids_list = self.__get_friend_ids(screen_name=screen_name)
         friends_list, _ = self.lookup_users(user_ids_list=friend_ids_list)
         return [dict({'screen_name': u.screen_name, 'id': u.id}) for u in friends_list]
 
