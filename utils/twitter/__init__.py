@@ -5,15 +5,14 @@ import tweepy
 
 from utils import setup_logger, paginate
 
-setup_logger()
+RETRY_COUNT = 5
+PAGE_SIZE = 100
 
 
 class API:
-    RETRY_COUNT = 5
-    PAGE_SIZE = 100
-
-    def __init__(self, auth_info):
-        self.api = self.__get_api(auth_info, self.RETRY_COUNT)
+    def __init__(self, auth_info, outdir):
+        self.api = self.__get_api(auth_info, RETRY_COUNT)
+        setup_logger(outdir)
 
     def lookup_users(self, user_ids_list=None, screen_names_list=None, page_size=PAGE_SIZE):
         errors, users = [], []
@@ -58,6 +57,49 @@ class API:
 
     def __get_friend_ids(self, *args, **kwargs):
         return list(tweepy.Cursor(self.api.get_friend_ids, *args, **kwargs).items())
+
+
+class CLIENT:
+    def __init__(self, auth_info, outdir):
+        self.client = self.__get_client(auth_info)
+        setup_logger(outdir)
+
+    @classmethod
+    def __get_client(cls, auth_info):
+        return tweepy.Client(bearer_token=auth_info['bearer_token'],
+                             consumer_key=auth_info['consumer_key'],
+                             consumer_secret=auth_info['consumer_secret'],
+                             access_token=auth_info['access_token'],
+                             access_token_secret=auth_info['access_token_secret'],
+                             wait_on_rate_limit=True)
+
+    def get_tweets(self, ids_list, page_size=PAGE_SIZE):
+        tweets = []
+        for ids in paginate(ids_list, page_size):
+            tweets.extend(self.client.get_tweets(ids=ids))
+        return tweets
+
+    def get_users(self, user_ids_list=None, screen_names_list=None, page_size=PAGE_SIZE):
+        users, errors = [], []
+
+        for user_ids in paginate(user_ids_list, page_size):
+            users.extend(self.client.get_users(user_id=user_ids))
+
+        for screen_names in paginate(screen_names_list, page_size):
+            # TODO DEBUG
+            batch = self.client.get_users(usernames=screen_names)
+            users.extend(batch)
+
+        return users, errors
+
+    def get_following(self, screen_name=None, user_id=None):
+        if (screen_name and user_id) or not (screen_name or user_id):
+            raise Exception('Must only take one argument, either screen_name or user_id')
+
+        # TODO DEBUG
+        if screen_name:
+            user_id = self.client.get_me(username=screen_name).id
+        return tweepy.Paginator(self.client.get_users_following, id=user_id).flatten()
 
 
 def get_screen_names(str):

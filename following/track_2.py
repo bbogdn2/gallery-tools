@@ -138,7 +138,7 @@ def main():
     for user in users:
         logger.info(f"Tracking @{user}...")
         try:
-            save_following(user, twitter.API(auth_info, outdir).get_friends(user), outdir)
+            save_following(user, twitter.CLIENT(auth_info, outdir).get_following(user), outdir)
         except Exception as e:
             logger.error(e)
 
